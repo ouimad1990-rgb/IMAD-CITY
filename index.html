@@ -2,354 +2,345 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>محاكي القيادة الاحترافي - 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>محاكي القيادة الفائق - النسخة الاحترافية</title>
     <style>
         * {
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
             box-sizing: border-box;
+            -webkit-touch-callout: none;
         }
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #030305;
+            background-color: #020205;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        /* واجهة الـ HUD الاحترافية */
-        #hud {
+        #hud-container {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 25px;
+            right: 25px;
             color: #fff;
-            background: rgba(10, 10, 15, 0.75);
-            padding: 12px 22px;
-            border-radius: 14px;
-            border: 1px solid rgba(0, 243, 255, 0.4);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-            backdrop-filter: blur(10px);
+            background: rgba(10, 12, 20, 0.85);
+            padding: 15px 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
+            backdrop-filter: blur(12px);
             z-index: 10;
         }
-        h1 { margin: 0 0 5px 0; font-size: 15px; color: #00f3ff; letter-spacing: 1px; }
-        .speedometer { font-size: 24px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00f3ff; }
+        h2 { margin: 0 0 5px 0; font-size: 14px; color: #00f3ff; letter-spacing: 2px; text-transform: uppercase; }
+        .speed-box { font-size: 28px; font-weight: 900; color: #ffffff; text-shadow: 0 0 12px #00f3ff; }
+        .unit { font-size: 12px; color: #88a0c0; margin-right: 5px; }
 
         /* أزرار التحكم باللمس الاحترافية للهواتف */
-        .touch-controls {
+        .controls-layer {
             position: absolute;
-            bottom: 30px;
+            bottom: 35px;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 30px;
+            padding: 0 35px;
             z-index: 20;
             pointer-events: none;
         }
-        .btn-group {
+        .action-group {
             display: flex;
-            gap: 18px;
+            gap: 20px;
             pointer-events: auto;
         }
-        .btn {
-            width: 75px;
-            height: 75px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(0, 243, 255, 0.5);
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(0, 243, 255, 0.6);
             border-radius: 50%;
             color: #00f3ff;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: bold;
             display: flex;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            transition: all 0.05s ease;
         }
-        .btn:active {
-            background: rgba(0, 243, 255, 0.4);
-            color: #fff;
-            transform: scale(0.9);
+        .control-btn:active, .control-btn.active {
+            background: rgba(0, 243, 255, 0.5);
+            color: #ffffff;
+            transform: scale(0.92);
+            box-shadow: 0 0 20px #00f3ff;
         }
     </style>
 </head>
 <body>
 
-    <div id="hud">
-        <h1>السرعة القصوى</h1>
-        <div class="speedometer"><span id="speedVal">0</span> كم/س</div>
+    <div id="hud-container">
+        <h2>السرعة الحالية</h2>
+        <div class="speed-box"><span id="speedDisplay">0</span><span class="unit">كم/س</span></div>
     </div>
 
-    <!-- لوحة التحكم باللمس -->
-    <div class="touch-controls">
-        <div class="btn-group">
-            <div class="btn" id="btnLeft">◀</div>
-            <div class="btn" id="btnRight">▶</div>
+    <!-- أزرار اللمس -->
+    <div class="controls-layer">
+        <div class="action-group">
+            <div class="control-btn" id="leftBtn">◀</div>
+            <div class="control-btn" id="rightBtn">▶</div>
         </div>
-        <div class="btn-group">
-            <div class="btn" id="btnBrake">🛑</div>
-            <div class="btn" id="btnGas">▲</div>
+        <div class="action-group">
+            <div class="control-btn" id="brakeBtn">🛑</div>
+            <div class="control-btn" id="gasBtn">▲</div>
         </div>
     </div>
 
-    <!-- استدعاء مكتبة الجرافيك الثلاثية الأبعاد الحديثة -->
+    <!-- مكتبة الجرافيك العالمية Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // --- 1. إعداد محرك العرض والجرافيك الاحترافي ---
+        // --- إعداد المشهد الأساسي والرندرة ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050508);
-        scene.fog = new THREE.FogExp2(0x050508, 0.01);
+        scene.background = new THREE.Color(0x030307);
+        scene.fog = new THREE.FogExp2(0x030307, 0.008);
 
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500);
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        renderer.toneMappingExposure = 1.3;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. الإضاءة السينمائية المتقدمة ---
-        const ambientLight = new THREE.AmbientLight(0xddeeff, 0.5);
+        // --- الإضاءة الاحترافية ---
+        const ambientLight = new THREE.AmbientLight(0xddeeff, 0.6);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.5);
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 500;
-        const d = 100;
-        dirLight.shadow.camera.left = -d;
-        dirLight.shadow.camera.right = d;
-        dirLight.shadow.camera.top = d;
-        dirLight.shadow.camera.bottom = -d;
-        scene.add(dirLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        sunLight.position.set(60, 120, 60);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 600;
+        const dRange = 120;
+        sunLight.shadow.camera.left = -dRange;
+        sunLight.shadow.camera.right = dRange;
+        sunLight.shadow.camera.top = dRange;
+        sunLight.shadow.camera.bottom = -dRange;
+        scene.add(sunLight);
 
-        // إضاءة زرقاء نيون تعطي طابعاً مستقبلياً
-        const neonLight = new THREE.PointLight(0x00f3ff, 2, 100);
-        neonLight.position.set(0, 10, 0);
-        scene.add(neonLight);
-
-        // --- 3. بناء بيئة المدينة الاحترافية ---
-        // رصيف وجوانب الطريق
-        const groundGeo = new THREE.PlaneGeometry(300, 2000);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x121318, roughness: 0.9 });
+        // --- بناء الأرضية والشارع العريض ---
+        const groundGeo = new THREE.PlaneGeometry(400, 3000);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 0.95 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // الشارع (الأسفلت)
-        const roadGeo = new THREE.PlaneGeometry(24, 2000);
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x1a1c23, roughness: 0.5, metalness: 0.1 });
+        const roadGeo = new THREE.PlaneGeometry(26, 3000);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x15171d, roughness: 0.4, metalness: 0.2 });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.position.y = 0.02;
         road.receiveShadow = true;
         scene.add(road);
 
-        // خطوط الشارع المضيئة
-        const lineGeo = new THREE.PlaneGeometry(0.4, 6);
+        // خطوط المنتصف المضيئة
+        const lineGeo = new THREE.PlaneGeometry(0.4, 5);
         const lineMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
-        for (let z = -1000; z < 1000; z += 15) {
+        for (let z = -1500; z < 1500; z += 15) {
             const line = new THREE.Mesh(lineGeo, lineMat);
             line.rotation.x = -Math.PI / 2;
             line.position.set(0, 0.03, z);
             scene.add(line);
         }
 
-        // بناء ناطحات السحاب والمباني الملونة الحديثة
-        const bColors = [0xff0055, 0x00f3ff, 0x7000ff, 0xffaa00, 0x00ff66, 0x112244];
-        for (let z = -900; z <= 900; z += 35) {
-            [-28, 28].forEach(x => {
-                const height = Math.random() * 50 + 25;
-                const bGeo = new THREE.BoxGeometry(16, height, 16);
+        // --- بناء ناطحات السحاب والبيئة الحضرية ---
+        const bColors = [0x112233, 0x1c1c2e, 0x221122, 0x0e221a, 0x2b1b11];
+        for (let z = -1400; z <= 1400; z += 40) {
+            [-32, 32].forEach(x => {
+                const bHeight = Math.random() * 60 + 30;
+                const bGeo = new THREE.BoxGeometry(18, bHeight, 18);
                 const col = bColors[Math.floor(Math.random() * bColors.length)];
-                const bMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.4 });
+                const bMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.5 });
                 const building = new THREE.Mesh(bGeo, bMat);
-                building.position.set(x, height / 2, z);
+                building.position.set(x, bHeight / 2, z);
                 building.castShadow = true;
                 building.receiveShadow = true;
                 scene.add(building);
             });
         }
 
-        // --- 4. تصميم سيارات بجرافيك عالي (رياضية واحترافية) ---
-        function createVehicle(bodyColor, isSports = false) {
-            const car = new THREE.Group();
+        // --- بناء السيارة الرياضية الاحترافية ---
+        function createProCar(colorHex, isPlayer = false) {
+            const carGroup = new THREE.Group();
 
-            // الهيكل السفلي
-            const bodyGeo = new THREE.BoxGeometry(2.0, 0.6, 4.2);
+            // هيكل السيارة الرئيسي
+            const bodyGeo = new THREE.BoxGeometry(2.1, 0.65, 4.4);
             const bodyMat = new THREE.MeshPhysicalMaterial({ 
-                color: bodyColor, 
+                color: colorHex, 
                 metalness: 0.9, 
                 roughness: 0.1, 
                 clearcoat: 1.0, 
                 clearcoatRoughness: 0.1 
             });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 0.5;
+            body.position.y = 0.55;
             body.castShadow = true;
-            car.add(body);
+            carGroup.add(body);
 
             // كابينة القيادة الزجاجية
-            const cabinGeo = new THREE.BoxGeometry(1.5, 0.45, 2.0);
-            const cabinMat = new THREE.MeshPhysicalMaterial({ color: 0x050505, roughness: 0.1, transmission: 0.6 });
+            const cabinGeo = new THREE.BoxGeometry(1.5, 0.5, 2.1);
+            const cabinMat = new THREE.MeshPhysicalMaterial({ color: 0x050508, roughness: 0.1, transmission: 0.5 });
             const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-            cabin.position.set(0, 0.95, -0.2);
+            cabin.position.set(0, 1.05, -0.2);
             cabin.castShadow = true;
-            car.add(cabin);
+            carGroup.add(cabin);
 
-            // عجلات احترافية
-            const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.35, 24);
+            // عجلات السيارة
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.38, 24);
             const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-            const wheelPositions = [[-1.1, 0.38, 1.3], [1.1, 0.38, 1.3], [-1.1, 0.38, -1.3], [1.1, 0.38, -1.3]];
-            wheelPositions.forEach(pos => {
+            const wPositions = [[-1.15, 0.4, 1.4], [1.15, 0.4, 1.4], [-1.15, 0.4, -1.4], [1.15, 0.4, -1.4]];
+            wPositions.forEach(pos => {
                 const wheel = new THREE.Mesh(wheelGeo, wheelMat);
                 wheel.rotation.z = Math.PI / 2;
                 wheel.position.set(...pos);
                 wheel.castShadow = true;
-                car.add(wheel);
+                carGroup.add(wheel);
             });
 
-            if (isSports) {
-                // إضاءة أمامية متوهجة للسيارة
-                const lightGeo = new THREE.BoxGeometry(0.3, 0.15, 0.1);
+            if (isPlayer) {
+                // مصابيح أمامية نيون متوهجة
+                const lightGeo = new THREE.BoxGeometry(0.35, 0.15, 0.1);
                 const lightMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-                const l1 = new THREE.Mesh(lightGeo, lightMat); l1.position.set(-0.7, 0.5, 2.1);
-                const l2 = new THREE.Mesh(lightGeo, lightMat); l2.position.set(0.7, 0.5, 2.1);
-                car.add(l1, l2);
+                const l1 = new THREE.Mesh(lightGeo, lightMat); l1.position.set(-0.75, 0.6, 2.25);
+                const l2 = new THREE.Mesh(lightGeo, lightMat); l2.position.set(0.75, 0.6, 2.25);
+                carGroup.add(l1, l2);
             }
 
-            return car;
+            return carGroup;
         }
 
         // سيارة اللاعب
-        const playerCar = createVehicle(0xff0033, true);
+        const playerCar = createProCar(0xff003b, true);
         playerCar.position.set(0, 0, 0);
         scene.add(playerCar);
 
         // سيارات المرور (NPCs) غير قابلة للاختراق
         const npcCars = [];
-        const npcColors = [0x0055ff, 0x00ff55, 0xffff00, 0xff5500, 0xaa00ff];
-        for (let i = 0; i < 8; i++) {
-            const npc = createVehicle(npcColors[i % npcColors.length], false);
-            const lane = (i % 2 === 0) ? -5 : 5;
-            npc.position.set(lane, 0, (i * 50) - 200);
-            npc.speed = 0.15 + Math.random() * 0.1;
+        const npcColors = [0x0066ff, 0x00ff66, 0xffaa00, 0x9900ff, 0x00ffff];
+        for (let i = 0; i < 10; i++) {
+            const npc = createProCar(npcColors[i % npcColors.length], false);
+            const lane = (i % 2 === 0) ? -5.5 : 5.5;
+            npc.position.set(lane, 0, (i * 60) - 250);
+            npc.speed = 0.18 + Math.random() * 0.12;
             scene.add(npc);
             npcCars.push(npc);
         }
 
-        // --- 5. نظام التحكم المتقدم (لمس + لوحة مفاتيح) ---
-        const keys = { w: false, s: false, a: false, d: false };
+        // --- نظام التحكم التفاعلي (اللمس + لوحة المفاتيح) ---
+        const inputState = { forward: false, backward: false, left: false, right: false };
 
-        const bindTouch = (id, key) => {
-            const el = document.getElementById(id);
-            if(!el) return;
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
-            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
+        const setupTouch = (elemId, stateKey) => {
+            const el = document.getElementById(elemId);
+            if (!el) return;
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); inputState[stateKey] = true; el.classList.add('active'); }, { passive: false });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); inputState[stateKey] = false; el.classList.remove('active'); }, { passive: false });
+            el.addEventListener('touchcancel', (e) => { e.preventDefault(); inputState[stateKey] = false; el.classList.remove('active'); }, { passive: false });
         };
-        bindTouch('btnGas', 'w');
-        bindTouch('btnBrake', 's');
-        bindTouch('btnLeft', 'a');
-        bindTouch('btnRight', 'd');
+
+        setupTouch('gasBtn', 'forward');
+        setupTouch('brakeBtn', 'backward');
+        setupTouch('leftBtn', 'left');
+        setupTouch('rightBtn', 'right');
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.w = true;
-            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.s = true;
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.a = true;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.d = true;
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') inputState.forward = true;
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') inputState.backward = true;
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') inputState.left = true;
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') inputState.right = true;
         });
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.w = false;
-            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.s = false;
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.a = false;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.d = false;
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') inputState.forward = false;
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') inputState.backward = false;
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') inputState.left = false;
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') inputState.right = false;
         });
 
-        // --- 6. المحرك الفيزيائي والاصطدامات الحية ---
-        let carSpeed = 0;
-        const maxSpeed = 0.7;
-        const acceleration = 0.012;
-        const friction = 0.006;
+        // --- محرك الفيزياء وحساب الاصطدامات الحية ---
+        let currentSpeed = 0;
+        const topSpeed = 0.75;
+        const accelerationRate = 0.012;
+        const frictionRate = 0.005;
 
         function checkCollision(nx, nz) {
-            // حدود الطريق الجانبية
-            if (Math.abs(nx) > 10.5) return true;
-            // الاصطدام بالسيارات الأخرى
+            if (Math.abs(nx) > 11.5) return true; // حدود الطريق
             for (let npc of npcCars) {
                 const dx = Math.abs(nx - npc.position.x);
                 const dz = Math.abs(nz - npc.position.z);
-                if (dx < 2.0 && dz < 4.0) return true;
+                if (dx < 2.2 && dz < 4.5) return true; // منع اختراق سيارات NPC
             }
             return false;
         }
 
-        // --- 7. حلقة تشغيل اللعبة (Game Loop) ---
-        function animate() {
-            requestAnimationFrame(animate);
+        // --- حلقة تشغيل اللعبة الأساسية (Game Loop) ---
+        function runGameLoop() {
+            requestAnimationFrame(runGameLoop);
 
             // الفيزياء والتسارع
-            if (keys.w) carSpeed = Math.min(carSpeed + acceleration, maxSpeed);
-            else if (keys.s) carSpeed = Math.max(carSpeed - acceleration, -maxSpeed / 2.5);
+            if (inputState.forward) currentSpeed = Math.min(currentSpeed + accelerationRate, topSpeed);
+            else if (inputState.backward) currentSpeed = Math.max(currentSpeed - accelerationRate, -topSpeed / 2.5);
             else {
-                if (carSpeed > 0) carSpeed = Math.max(0, carSpeed - friction);
-                if (carSpeed < 0) carSpeed = Math.min(0, carSpeed + friction);
+                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - frictionRate);
+                if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + frictionRate);
             }
 
             // الانعطاف
-            let turnAmount = 0;
-            if (keys.a) turnAmount += 0.032;
-            if (keys.d) turnAmount -= 0.032;
+            let steering = 0;
+            if (inputState.left) steering += 0.035;
+            if (inputState.right) steering -= 0.035;
 
-            const nextRot = playerCar.rotation.y + turnAmount * (carSpeed / maxSpeed);
-            const nextX = playerCar.position.x + Math.sin(nextRot) * carSpeed;
-            const nextZ = playerCar.position.z + Math.cos(nextRot) * carSpeed;
+            const nextRotation = playerCar.rotation.y + steering * (currentSpeed / topSpeed);
+            const nextX = playerCar.position.x + Math.sin(nextRotation) * currentSpeed;
+            const nextZ = playerCar.position.z + Math.cos(nextRotation) * currentSpeed;
 
-            // التحقق من التصادم ومنع الاختراق
+            // تطبيق الحركة أو منع الاختراق عند الاصطدام
             if (!checkCollision(nextX, nextZ)) {
-                playerCar.rotation.y = nextRot;
+                playerCar.rotation.y = nextRotation;
                 playerCar.position.x = nextX;
                 playerCar.position.z = nextZ;
             } else {
-                carSpeed = -carSpeed * 0.35; // ارتداد عند الاصطدام
+                currentSpeed = -currentSpeed * 0.4; // ارتداد واقعي
             }
 
-            // تحديث سيارات الـ NPC
+            // تحريك سيارات الـ NPC
             npcCars.forEach(npc => {
                 npc.position.z += npc.speed;
-                if (npc.position.z > playerCar.position.z + 150) {
-                    npc.position.z = playerCar.position.z - 250;
+                if (npc.position.z > playerCar.position.z + 180) {
+                    npc.position.z = playerCar.position.z - 300;
                 }
             });
 
-            // ربط الإضاءة النيون بمكان اللاعب
-            neonLight.position.copy(playerCar.position);
-            neonLight.position.y += 3;
+            // تحديث واجهة عداد السرعة الرقمي
+            document.getElementById('speedDisplay').innerText = Math.round(Math.abs(currentSpeed) * 380);
 
-            // تحديث واجهة السرعة على الشاشة
-            document.getElementById('speedVal').innerText = Math.round(Math.abs(carSpeed) * 350);
-
-            // كاميرا سينمائية ذكية ومتحركة خلف السيارة
-            const camOffset = new THREE.Vector3(0, 4.5, -9.5);
+            // كاميرا سينمائية خلفية تتبع حركة السيارة بمرونة فائقة
+            const camOffset = new THREE.Vector3(0, 4.8, -10.5);
             camOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerCar.rotation.y);
             camera.position.copy(playerCar.position).add(camOffset);
             
-            const lookTarget = playerCar.position.clone();
-            lookTarget.y += 1.2;
-            camera.lookAt(lookTarget);
+            const targetLook = playerCar.position.clone();
+            targetLook.y += 1.3;
+            camera.lookAt(targetLook);
 
             renderer.render(scene, camera);
         }
 
-        animate();
+        runGameLoop();
 
-        // التكيف التلقائي مع شاشات الهواتف
+        // التكيف التلقائي مع تغيير حجم الشاشة أو تدوير الهاتف
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
