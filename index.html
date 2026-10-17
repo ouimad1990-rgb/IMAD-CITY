@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة سيارات احترافية - ثلاثية الأبعاد</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,255,255,0.3);
+            border: 1px solid rgba(0,255,255,0.4);
+            pointer-events: none;
+        }
+        h1 { margin: 0 0 5px 0; font-size: 20px; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        p { margin: 0; font-size: 14px; color: #ccc; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>محاكي القيادة الفائق</h1>
+        <p>استخدم الأزرار: <strong>W A S D</strong> أو الأسهم للتحريك</p>
+    </div>
+
+    <!-- استدعاء مكتبة الجرافيك الخارقة Three.js للويب -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // إعداد المشهد والكاميرا والمحاكي
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.FogExp2(0x050505, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        // الإضاءة السينمائية المتقدمة
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x00ffff, 1.5);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xff0055, 2, 50);
+        pointLight.position.set(0, 5, 0);
+        scene.add(pointLight);
+
+        // بناء الأرضية والشارع
+        const floorGeo = new THREE.PlaneGeometry(500, 500);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // بناء مدينة افتراضية مبسطة (مبانٍ جانبية)
+        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.5 });
+        for (let i = -100; i <= 100; i += 20) {
+            if (Math.abs(i) < 10) continue;
+            
+            // مبنى يمين
+            const bGeoR = new THREE.BoxGeometry(10, Math.random() * 40 + 20, 10);
+            const bR = new THREE.Mesh(bGeoR, buildingMat);
+            bR.position.set(25, bR.geometry.parameters.height / 2, i);
+            bR.castShadow = true;
+            bR.receiveShadow = true;
+            scene.add(bR);
+
+            // مبنى يسار
+            const bGeoL = new THREE.BoxGeometry(10, Math.random() * 40 + 20, 10);
+            const bL = new THREE.Mesh(bGeoL, buildingMat);
+            bL.position.set(-25, bL.geometry.parameters.height / 2, i);
+            bL.castShadow = true;
+            bL.receiveShadow = true;
+            scene.add(bL);
+        }
+
+        // تصميم السيارة الرياضية
+        const carGroup = new THREE.Group();
+
+        // هيكل السيارة الفاخر بلون معدني متوهج
+        const bodyGeo = new THREE.BoxGeometry(2.2, 0.8, 4.5);
+        const bodyMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0xff0033, 
+            metalness: 0.9, 
+            roughness: 0.1, 
+            clearcoat: 1.0, 
+            clearcoatRoughness: 0.1 
+        });
+        const carBody = new THREE.Mesh(bodyGeo, bodyMat);
+        carBody.position.y = 0.6;
+        carBody.castShadow = true;
+        carGroup.add(carBody);
+
+        // سقف السيارة وكابينة القيادة
+        const cabinGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
+        const cabinMat = new THREE.MeshPhysicalMaterial({ color: 0x111111, roughness: 0.2, transmission: 0.3 });
+        const carCabin = new THREE.Mesh(cabinGeo, cabinMat);
+        carCabin.position.set(0, 1.2, -0.2);
+        carCabin.castShadow = true;
+        carGroup.add(carCabin);
+
+        // العجلات
+        const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 32);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+        
+        const wheelPositions = [
+            [-1.2, 0.4, 1.5], [1.2, 0.4, 1.5],
+            [-1.2, 0.4, -1.5], [1.2, 0.4, -1.5]
+        ];
+
+        const wheels = [];
+        wheelPositions.forEach(pos => {
+            const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(...pos);
+            wheel.castShadow = true;
+            carGroup.add(wheel);
+            wheels.push(wheel);
+        });
+
+        scene.add(carGroup);
+
+        // متغيرات الحركة والتحكم
+        const keys = {};
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        let speed = 0;
+        let maxSpeed = 0.8;
+        let acceleration = 0.015;
+        let deceleration = 0.01;
+        let steeringAngle = 0;
+
+        // حلقة اللعبة الرئيسية (Game Loop)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // نظام القيادة والتسارع
+            if (keys['w'] || keys['arrowup']) {
+                if (speed < maxSpeed) speed += acceleration;
+            } else if (keys['s'] || keys['arrowdown']) {
+                if (speed > -maxSpeed / 2) speed -= acceleration;
+            } else {
+                if (speed > 0) speed -= deceleration;
+                if (speed < 0) speed += deceleration;
+                if (Math.abs(speed) < 0.005) speed = 0;
+            }
+
+            // نظام التوجيه والانعطاف
+            if (keys['a'] || keys['arrowleft']) {
+                if (Math.abs(speed) > 0.01) steeringAngle += 0.025 * (speed / maxSpeed);
+            }
+            if (keys['d'] || keys['arrowright']) {
+                if (Math.abs(speed) > 0.01) steeringAngle -= 0.025 * (speed / maxSpeed);
+            }
+
+            // تحديث موقع السيارة واتجاهها
+            carGroup.rotation.y += steeringAngle * (speed * 0.8);
+            carGroup.translateZ(speed);
+            steeringAngle *= 0.9; // عودة العجلات للوضع الطبيعي تدريجياً
+
+            // تحديث إضاءة السيارة المرافقة
+            pointLight.position.copy(carGroup.position);
+            pointLight.position.y += 2;
+
+            // تتبع الكاميرا السينمائي السلس للسيارة
+            const idealOffset = new THREE.Vector3(0, 4, -9);
+            idealOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), carGroup.rotation.y);
+            idealOffset.add(carGroup.position);
+            camera.position.lerp(idealOffset, 0.1);
+
+            const lookAtTarget = carGroup.position.clone();
+            lookAtTarget.y += 1;
+            camera.lookAt(lookAtTarget);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // التكيف مع حجم الشاشة
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
