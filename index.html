@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>محاكي القيادة الفائق - النسخة الاحترافية</title>
+    <title>لعبة قتال الأسلحة على الحلبة المتمايلة - 3D</title>
     <style>
         * {
             user-select: none;
@@ -18,92 +18,102 @@
             background-color: #020205;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #hud-container {
+        #hud {
             position: absolute;
-            top: 25px;
-            right: 25px;
+            top: 20px;
+            right: 20px;
             color: #fff;
             background: rgba(10, 12, 20, 0.85);
-            padding: 15px 25px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 243, 255, 0.5);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
-            backdrop-filter: blur(12px);
+            padding: 12px 20px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 0, 85, 0.5);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            backdrop-filter: blur(10px);
             z-index: 10;
         }
-        h2 { margin: 0 0 5px 0; font-size: 14px; color: #00f3ff; letter-spacing: 2px; text-transform: uppercase; }
-        .speed-box { font-size: 28px; font-weight: 900; color: #ffffff; text-shadow: 0 0 12px #00f3ff; }
-        .unit { font-size: 12px; color: #88a0c0; margin-right: 5px; }
+        h2 { margin: 0 0 3px 0; font-size: 13px; color: #ff0055; letter-spacing: 2px; text-transform: uppercase; }
+        .score-val { font-size: 24px; font-weight: 900; color: #ffffff; text-shadow: 0 0 10px #ff0055; }
 
-        /* أزرار التحكم باللمس الاحترافية للهواتف */
+        /* أزرار التحكم باللمس للهواتف */
         .controls-layer {
             position: absolute;
-            bottom: 35px;
+            bottom: 25px;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 35px;
+            padding: 0 25px;
             z-index: 20;
             pointer-events: none;
         }
         .action-group {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             pointer-events: auto;
         }
         .control-btn {
-            width: 80px;
-            height: 80px;
+            width: 75px;
+            height: 75px;
             background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(0, 243, 255, 0.6);
+            border: 2px solid rgba(255, 0, 85, 0.6);
             border-radius: 50%;
-            color: #00f3ff;
-            font-size: 28px;
+            color: #ff0055;
+            font-size: 26px;
             font-weight: bold;
             display: flex;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(8px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-            transition: all 0.05s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
         }
         .control-btn:active, .control-btn.active {
-            background: rgba(0, 243, 255, 0.5);
+            background: rgba(255, 0, 85, 0.5);
             color: #ffffff;
             transform: scale(0.92);
-            box-shadow: 0 0 20px #00f3ff;
+            box-shadow: 0 0 20px #ff0055;
+        }
+        .fire-btn {
+            border-color: #00f3ff;
+            color: #00f3ff;
+            background: rgba(0, 243, 255, 0.15);
+            width: 85px;
+            height: 85px;
+        }
+        .fire-btn:active {
+            background: rgba(0, 243, 255, 0.6);
+            color: #fff;
+            box-shadow: 0 0 25px #00f3ff;
         }
     </style>
 </head>
 <body>
 
-    <div id="hud-container">
-        <h2>السرعة الحالية</h2>
-        <div class="speed-box"><span id="speedDisplay">0</span><span class="unit">كم/س</span></div>
+    <div id="hud">
+        <h2>النقاط المحرزة</h2>
+        <div class="score-val"><span id="scoreDisplay">0</span> نقطة</div>
     </div>
 
-    <!-- أزرار اللمس -->
+    <!-- أزرار اللمس للتحركة وإطلاق النار -->
     <div class="controls-layer">
         <div class="action-group">
             <div class="control-btn" id="leftBtn">◀</div>
             <div class="control-btn" id="rightBtn">▶</div>
         </div>
         <div class="action-group">
-            <div class="control-btn" id="brakeBtn">🛑</div>
-            <div class="control-btn" id="gasBtn">▲</div>
+            <div class="control-btn" id="upBtn">▲</div>
+            <div class="control-btn fire-btn" id="fireBtn">💥</div>
         </div>
     </div>
 
-    <!-- مكتبة الجرافيك العالمية Three.js -->
+    <!-- استدعاء مكتبة الجرافيك العالمية Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // --- إعداد المشهد الأساسي والرندرة ---
+        // --- إعداد بيئة العرض والمشهد ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x030307);
-        scene.fog = new THREE.FogExp2(0x030307, 0.008);
+        scene.background = new THREE.Color(0x030308);
+        scene.fog = new THREE.FogExp2(0x030308, 0.012);
 
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500);
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -113,234 +123,227 @@
         renderer.toneMappingExposure = 1.3;
         document.body.appendChild(renderer.domElement);
 
-        // --- الإضاءة الاحترافية ---
-        const ambientLight = new THREE.AmbientLight(0xddeeff, 0.6);
+        // --- الإضاءة السينمائية ---
+        const ambientLight = new THREE.AmbientLight(0x223344, 0.8);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
-        sunLight.position.set(60, 120, 60);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.near = 0.5;
-        sunLight.shadow.camera.far = 600;
-        const dRange = 120;
-        sunLight.shadow.camera.left = -dRange;
-        sunLight.shadow.camera.right = dRange;
-        sunLight.shadow.camera.top = dRange;
-        sunLight.shadow.camera.bottom = -dRange;
-        scene.add(sunLight);
+        const dirLight = new THREE.DirectionalLight(0xff0055, 1.5);
+        dirLight.position.set(30, 80, 30);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
 
-        // --- بناء الأرضية والشارع العريض ---
-        const groundGeo = new THREE.PlaneGeometry(400, 3000);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 0.95 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        scene.add(ground);
+        const blueNeonLight = new THREE.PointLight(0x00f3ff, 3, 80);
+        blueNeonLight.position.set(0, 10, 0);
+        scene.add(blueNeonLight);
 
-        const roadGeo = new THREE.PlaneGeometry(26, 3000);
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x15171d, roughness: 0.4, metalness: 0.2 });
-        const road = new THREE.Mesh(roadGeo, roadMat);
-        road.rotation.x = -Math.PI / 2;
-        road.position.y = 0.02;
-        road.receiveShadow = true;
-        scene.add(road);
+        // --- بناء الحلبة الدائرية المتمايلة ---
+        const arenaGroup = new THREE.Group();
+        
+        const floorGeo = new THREE.CylinderGeometry(45, 45, 3, 64);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.4, metalness: 0.6 });
+        const arenaFloor = new THREE.Mesh(floorGeo, floorMat);
+        arenaFloor.position.y = -1.5;
+        arenaFloor.receiveShadow = true;
+        arenaGroup.add(arenaFloor);
 
-        // خطوط المنتصف المضيئة
-        const lineGeo = new THREE.PlaneGeometry(0.4, 5);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
-        for (let z = -1500; z < 1500; z += 15) {
-            const line = new THREE.Mesh(lineGeo, lineMat);
-            line.rotation.x = -Math.PI / 2;
-            line.position.set(0, 0.03, z);
-            scene.add(line);
-        }
+        // حافة الحلبة المضيئة (Neon Border)
+        const ringGeo = new THREE.TorusGeometry(45, 0.8, 16, 100);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+        const arenaRing = new THREE.Mesh(ringGeo, ringMat);
+        arenaRing.rotation.x = Math.PI / 2;
+        arenaRing.position.y = 0;
+        arenaGroup.add(arenaRing);
 
-        // --- بناء ناطحات السحاب والبيئة الحضرية ---
-        const bColors = [0x112233, 0x1c1c2e, 0x221122, 0x0e221a, 0x2b1b11];
-        for (let z = -1400; z <= 1400; z += 40) {
-            [-32, 32].forEach(x => {
-                const bHeight = Math.random() * 60 + 30;
-                const bGeo = new THREE.BoxGeometry(18, bHeight, 18);
-                const col = bColors[Math.floor(Math.random() * bColors.length)];
-                const bMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.5 });
-                const building = new THREE.Mesh(bGeo, bMat);
-                building.position.set(x, bHeight / 2, z);
-                building.castShadow = true;
-                building.receiveShadow = true;
-                scene.add(building);
-            });
-        }
+        scene.add(arenaGroup);
 
-        // --- بناء السيارة الرياضية الاحترافية ---
-        function createProCar(colorHex, isPlayer = false) {
-            const carGroup = new THREE.Group();
-
-            // هيكل السيارة الرئيسي
-            const bodyGeo = new THREE.BoxGeometry(2.1, 0.65, 4.4);
-            const bodyMat = new THREE.MeshPhysicalMaterial({ 
-                color: colorHex, 
-                metalness: 0.9, 
-                roughness: 0.1, 
-                clearcoat: 1.0, 
-                clearcoatRoughness: 0.1 
-            });
+        // --- تصميم شخصية البطل (اللاعب) ---
+        function createPlayer() {
+            const player = new THREE.Group();
+            
+            // الجسم
+            const bodyGeo = new THREE.BoxGeometry(1.2, 1.8, 0.8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.2, metalness: 0.8 });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 0.55;
+            body.position.y = 0.9;
             body.castShadow = true;
-            carGroup.add(body);
+            player.add(body);
 
-            // كابينة القيادة الزجاجية
-            const cabinGeo = new THREE.BoxGeometry(1.5, 0.5, 2.1);
-            const cabinMat = new THREE.MeshPhysicalMaterial({ color: 0x050508, roughness: 0.1, transmission: 0.5 });
-            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-            cabin.position.set(0, 1.05, -0.2);
-            cabin.castShadow = true;
-            carGroup.add(cabin);
+            // السلاح
+            const gunGeo = new THREE.BoxGeometry(0.3, 0.3, 1.2);
+            const gunMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9 });
+            const gun = new THREE.Mesh(gunGeo, gunMat);
+            gun.position.set(0.7, 1.0, 0.6);
+            player.add(gun);
 
-            // عجلات السيارة
-            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.38, 24);
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-            const wPositions = [[-1.15, 0.4, 1.4], [1.15, 0.4, 1.4], [-1.15, 0.4, -1.4], [1.15, 0.4, -1.4]];
-            wPositions.forEach(pos => {
-                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-                wheel.rotation.z = Math.PI / 2;
-                wheel.position.set(...pos);
-                wheel.castShadow = true;
-                carGroup.add(wheel);
-            });
-
-            if (isPlayer) {
-                // مصابيح أمامية نيون متوهجة
-                const lightGeo = new THREE.BoxGeometry(0.35, 0.15, 0.1);
-                const lightMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-                const l1 = new THREE.Mesh(lightGeo, lightMat); l1.position.set(-0.75, 0.6, 2.25);
-                const l2 = new THREE.Mesh(lightGeo, lightMat); l2.position.set(0.75, 0.6, 2.25);
-                carGroup.add(l1, l2);
-            }
-
-            return carGroup;
+            return player;
         }
 
-        // سيارة اللاعب
-        const playerCar = createProCar(0xff003b, true);
-        playerCar.position.set(0, 0, 0);
-        scene.add(playerCar);
+        const player = createPlayer();
+        player.position.set(0, 0, 15);
+        scene.add(player);
 
-        // سيارات المرور (NPCs) غير قابلة للاختراق
-        const npcCars = [];
-        const npcColors = [0x0066ff, 0x00ff66, 0xffaa00, 0x9900ff, 0x00ffff];
-        for (let i = 0; i < 10; i++) {
-            const npc = createProCar(npcColors[i % npcColors.length], false);
-            const lane = (i % 2 === 0) ? -5.5 : 5.5;
-            npc.position.set(lane, 0, (i * 60) - 250);
-            npc.speed = 0.18 + Math.random() * 0.12;
-            scene.add(npc);
-            npcCars.push(npc);
+        // --- تصميم الأعداء (NPCs) ---
+        const enemies = [];
+        function spawnEnemy() {
+            const enemy = new THREE.Group();
+            const eBodyGeo = new THREE.BoxGeometry(1.2, 1.8, 0.8);
+            const eBodyMat = new THREE.MeshStandardMaterial({ color: 0xff0033, roughness: 0.3, metalness: 0.5 });
+            const eBody = new THREE.Mesh(eBodyGeo, eBodyMat);
+            eBody.position.y = 0.9;
+            eBody.castShadow = true;
+            enemy.add(eBody);
+
+            // توزيع عشوائي على محيط الدائرة
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 30 + Math.random() * 10;
+            enemy.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+            enemy.angle = angle;
+            enemy.radius = radius;
+            
+            scene.add(enemy);
+            enemies.push(enemy);
         }
 
-        // --- نظام التحكم التفاعلي (اللمس + لوحة المفاتيح) ---
-        const inputState = { forward: false, backward: false, left: false, right: false };
+        // إنشاء 5 أعداء في البداية
+        for(let i=0; i<5; i++) spawnEnemy();
 
-        const setupTouch = (elemId, stateKey) => {
-            const el = document.getElementById(elemId);
+        // --- نظام الرصاصات (Bullets) ---
+        const bullets = [];
+        function fireBullet() {
+            const bulletGeo = new THREE.SphereGeometry(0.25, 16, 16);
+            const bulletMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+            
+            bullet.position.copy(player.position);
+            bullet.position.y += 1.0;
+            
+            // اتجاه إطلاق الرصاصة بناءً على دوران اللاعب
+            const dir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+            bullet.velocity = dir.multiplyScalar(1.2);
+            
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+
+        // --- نظام التحكم التفاعلي ---
+        const controls = { left: false, right: false, forward: false, fire: false };
+
+        const bindTouch = (id, key) => {
+            const el = document.getElementById(id);
             if (!el) return;
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); inputState[stateKey] = true; el.classList.add('active'); }, { passive: false });
-            el.addEventListener('touchend', (e) => { e.preventDefault(); inputState[stateKey] = false; el.classList.remove('active'); }, { passive: false });
-            el.addEventListener('touchcancel', (e) => { e.preventDefault(); inputState[stateKey] = false; el.classList.remove('active'); }, { passive: false });
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); controls[key] = true; el.classList.add('active'); }, { passive: false });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); controls[key] = false; el.classList.remove('active'); }, { passive: false });
         };
 
-        setupTouch('gasBtn', 'forward');
-        setupTouch('brakeBtn', 'backward');
-        setupTouch('leftBtn', 'left');
-        setupTouch('rightBtn', 'right');
+        bindTouch('leftBtn', 'left');
+        bindTouch('rightBtn', 'right');
+        bindTouch('upBtn', 'forward');
+        
+        // زر إطلاق النار الخاص
+        const fireEl = document.getElementById('fireBtn');
+        fireEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            fireBullet();
+            fireEl.classList.add('active');
+        }, { passive: false });
+        fireEl.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            fireEl.classList.remove('active');
+        }, { passive: false });
 
+        // لوحة المفاتيح للحاسوب أيضاً
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') inputState.forward = true;
-            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') inputState.backward = true;
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') inputState.left = true;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') inputState.right = true;
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') controls.left = true;
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') controls.right = true;
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') controls.forward = true;
+            if (e.key === ' ') fireBullet();
         });
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') inputState.forward = false;
-            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') inputState.backward = false;
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') inputState.left = false;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') inputState.right = false;
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') controls.left = false;
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') controls.right = false;
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') controls.forward = false;
         });
 
-        // --- محرك الفيزياء وحساب الاصطدامات الحية ---
-        let currentSpeed = 0;
-        const topSpeed = 0.75;
-        const accelerationRate = 0.012;
-        const frictionRate = 0.005;
+        let score = 0;
+        let arenaTime = 0;
 
-        function checkCollision(nx, nz) {
-            if (Math.abs(nx) > 11.5) return true; // حدود الطريق
-            for (let npc of npcCars) {
-                const dx = Math.abs(nx - npc.position.x);
-                const dz = Math.abs(nz - npc.position.z);
-                if (dx < 2.2 && dz < 4.5) return true; // منع اختراق سيارات NPC
-            }
-            return false;
-        }
+        // --- حلقة اللعبة الأساسية (Game Loop) ---
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
 
-        // --- حلقة تشغيل اللعبة الأساسية (Game Loop) ---
-        function runGameLoop() {
-            requestAnimationFrame(runGameLoop);
+            arenaTime += 0.02;
+            // تمايل الحلبة الدائرية بسلاسة
+            arenaGroup.rotation.z = Math.sin(arenaTime * 0.8) * 0.06;
+            arenaGroup.rotation.x = Math.cos(arenaTime * 0.6) * 0.06;
 
-            // الفيزياء والتسارع
-            if (inputState.forward) currentSpeed = Math.min(currentSpeed + accelerationRate, topSpeed);
-            else if (inputState.backward) currentSpeed = Math.max(currentSpeed - accelerationRate, -topSpeed / 2.5);
-            else {
-                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - frictionRate);
-                if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + frictionRate);
+            // حركة اللاعب والانعطاف
+            if (controls.left) player.rotation.y += 0.04;
+            if (controls.right) player.rotation.y -= 0.04;
+
+            if (controls.forward) {
+                const moveDir = new THREE.Vector3(0, 0, -0.35).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+                player.position.add(moveDir);
             }
 
-            // الانعطاف
-            let steering = 0;
-            if (inputState.left) steering += 0.035;
-            if (inputState.right) steering -= 0.035;
-
-            const nextRotation = playerCar.rotation.y + steering * (currentSpeed / topSpeed);
-            const nextX = playerCar.position.x + Math.sin(nextRotation) * currentSpeed;
-            const nextZ = playerCar.position.z + Math.cos(nextRotation) * currentSpeed;
-
-            // تطبيق الحركة أو منع الاختراق عند الاصطدام
-            if (!checkCollision(nextX, nextZ)) {
-                playerCar.rotation.y = nextRotation;
-                playerCar.position.x = nextX;
-                playerCar.position.z = nextZ;
-            } else {
-                currentSpeed = -currentSpeed * 0.4; // ارتداد واقعي
+            // منع اللاعب من الخروج عن حدود الحلبة الدائرية
+            const distFromCenter = Math.sqrt(player.position.x ** 2 + player.position.z ** 2);
+            if (distFromCenter > 42) {
+                player.position.normalize().multiplyScalar(42);
             }
 
-            // تحريك سيارات الـ NPC
-            npcCars.forEach(npc => {
-                npc.position.z += npc.speed;
-                if (npc.position.z > playerCar.position.z + 180) {
-                    npc.position.z = playerCar.position.z - 300;
+            // تحديث الرصاصات واكتشاف الاصطدام بالأعداء
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.position.add(b.velocity);
+
+                // اختبار الاصطدام مع الأعداء
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let en = enemies[j];
+                    if (b.position.distanceTo(en.position) < 1.5) {
+                        // إصابة ناجحة! حذف العدو والرصاصة وإضافة نقاط
+                        scene.remove(en);
+                        enemies.splice(j, 1);
+                        scene.remove(b);
+                        bullets.splice(i, 1);
+                        
+                        score += 100;
+                        document.getElementById('scoreDisplay').innerText = score;
+
+                        // ظهور عدو جديد
+                        spawnEnemy();
+                        break;
+                    }
                 }
+
+                // حذف الرصاصة إذا خرجت بعيداً
+                if (b && b.position.length() > 60) {
+                    scene.remove(b);
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // تحركة الأعداء بشكل دائري حول الحلبة
+            enemies.forEach(en => {
+                en.angle += 0.01;
+                en.position.x = Math.cos(en.angle) * en.radius;
+                en.position.z = Math.sin(en.angle) * en.radius;
             });
 
-            // تحديث واجهة عداد السرعة الرقمي
-            document.getElementById('speedDisplay').innerText = Math.round(Math.abs(currentSpeed) * 380);
-
-            // كاميرا سينمائية خلفية تتبع حركة السيارة بمرونة فائقة
-            const camOffset = new THREE.Vector3(0, 4.8, -10.5);
-            camOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerCar.rotation.y);
-            camera.position.copy(playerCar.position).add(camOffset);
+            // كاميرا سينمائية خلف اللاعب مباشرة تتمايل معه
+            const camOffset = new THREE.Vector3(0, 5, 11);
+            camOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+            camera.position.copy(player.position).add(camOffset);
             
-            const targetLook = playerCar.position.clone();
-            targetLook.y += 1.3;
-            camera.lookAt(targetLook);
+            const lookTarget = player.position.clone();
+            lookTarget.y += 1.0;
+            camera.lookAt(lookTarget);
 
             renderer.render(scene, camera);
         }
 
-        runGameLoop();
+        gameLoop();
 
-        // التكيف التلقائي مع تغيير حجم الشاشة أو تدوير الهاتف
+        // التكيف التلقائي مع شاشات الهواتف
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
