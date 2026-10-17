@@ -2,210 +2,241 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سيارات احترافية - ثلاثية الأبعاد</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>لعبة سيارات الهواتف الفائقة</title>
     <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
+            background-color: #050508;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         #ui {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             color: #fff;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,255,255,0.3);
-            border: 1px solid rgba(0,255,255,0.4);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
             pointer-events: none;
+            z-index: 10;
         }
-        h1 { margin: 0 0 5px 0; font-size: 20px; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
-        p { margin: 0; font-size: 14px; color: #ccc; }
+        h1 { margin: 0; font-size: 16px; color: #00ffff; }
+        
+        /* عناصر التحكم باللمس للهاتف */
+        .touch-controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 20;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+        .btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            touch-action: none;
+        }
+        .btn:active {
+            background: rgba(0, 255, 255, 0.5);
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <h1>محاكي القيادة الفائق</h1>
-        <p>استخدم الأزرار: <strong>W A S D</strong> أو الأسهم للتحريك</p>
+        <h1>محاكي المدينة الملونة 3D</h1>
     </div>
 
-    <!-- استدعاء مكتبة الجرافيك الخارقة Three.js للويب -->
+    <!-- أزرار شاشة اللمس للهواتف -->
+    <div class="touch-controls">
+        <div class="btn-group">
+            <div class="btn" id="btnLeft">◀</div>
+            <div class="btn" id="btnRight">▶</div>
+        </div>
+        <div class="btn-group">
+            <div class="btn" id="btnBrake">🛑</div>
+            <div class="btn" id="btnGas">▲</div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // إعداد المشهد والكاميرا والمحاكي
+        // --- 1. إعداد المشهد والضوء ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        scene.fog = new THREE.FogExp2(0x050505, 0.015);
+        scene.background = new THREE.Color(0x0b0e14);
+        scene.fog = new THREE.FogExp2(0x0b0e14, 0.012);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // لتحسين الأداء على الهواتف
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // الإضاءة السينمائية المتقدمة
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        // الإضاءة العلوية والمحيطية
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0x00ffff, 1.5);
-        dirLight.position.set(20, 40, 20);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        scene.add(dirLight);
+        const sunLight = new THREE.DirectionalLight(0xffd700, 1.2);
+        sunLight.position.set(30, 60, 20);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        scene.add(sunLight);
 
-        const pointLight = new THREE.PointLight(0xff0055, 2, 50);
-        pointLight.position.set(0, 5, 0);
-        scene.add(pointLight);
+        // --- 2. رسم الأرضية والشارع المتطور ---
+        const roadGroup = new THREE.Group();
 
-        // بناء الأرضية والشارع
-        const floorGeo = new THREE.PlaneGeometry(500, 500);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        scene.add(floor);
+        // العشب (الجوانب)
+        const grassGeo = new THREE.PlaneGeometry(200, 1000);
+        const grassMat = new THREE.MeshStandardMaterial({ color: 0x112211, roughness: 0.9 });
+        const grass = new THREE.Mesh(grassGeo, grassMat);
+        grass.rotation.x = -Math.PI / 2;
+        grass.receiveShadow = true;
+        roadGroup.add(grass);
 
-        // بناء مدينة افتراضية مبسطة (مبانٍ جانبية)
-        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.5 });
-        for (let i = -100; i <= 100; i += 20) {
-            if (Math.abs(i) < 10) continue;
-            
-            // مبنى يمين
-            const bGeoR = new THREE.BoxGeometry(10, Math.random() * 40 + 20, 10);
-            const bR = new THREE.Mesh(bGeoR, buildingMat);
-            bR.position.set(25, bR.geometry.parameters.height / 2, i);
-            bR.castShadow = true;
-            bR.receiveShadow = true;
-            scene.add(bR);
+        // الشارع (الأسفلت)
+        const roadGeo = new THREE.PlaneGeometry(20, 1000);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.01;
+        road.receiveShadow = true;
+        roadGroup.add(road);
 
-            // مبنى يسار
-            const bGeoL = new THREE.BoxGeometry(10, Math.random() * 40 + 20, 10);
-            const bL = new THREE.Mesh(bGeoL, buildingMat);
-            bL.position.set(-25, bL.geometry.parameters.height / 2, i);
-            bL.castShadow = true;
-            bL.receiveShadow = true;
-            scene.add(bL);
+        // خطوط الشارع البيضاء
+        const lineGeo = new THREE.PlaneGeometry(0.5, 4);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        for (let z = -500; z < 500; z += 10) {
+            const line = new THREE.Mesh(lineGeo, lineMat);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(0, 0.02, z);
+            roadGroup.add(line);
+        }
+        scene.add(roadGroup);
+
+        // --- 3. بناء مباني ملونة جذابة ---
+        const colors = [0xff0055, 0x00ccff, 0xffcc00, 0x9900ff, 0x00ff66, 0xff6600];
+        const buildings = [];
+
+        for (let z = -450; z <= 450; z += 25) {
+            [-22, 22].forEach(x => {
+                const height = Math.random() * 25 + 15;
+                const buildingGeo = new THREE.BoxGeometry(12, height, 12);
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                const buildingMat = new THREE.MeshStandardMaterial({ 
+                    color: randomColor, 
+                    roughness: 0.3,
+                    metalness: 0.2
+                });
+                const b = new THREE.Mesh(buildingGeo, buildingMat);
+                b.position.set(x, height / 2, z);
+                b.castShadow = true;
+                b.receiveShadow = true;
+                scene.add(b);
+                buildings.push(b);
+            });
         }
 
-        // تصميم السيارة الرياضية
-        const carGroup = new THREE.Group();
+        // --- 4. دالة إنشاء السيارات ---
+        function createCar(color, isPlayer = false) {
+            const group = new THREE.Group();
 
-        // هيكل السيارة الفاخر بلون معدني متوهج
-        const bodyGeo = new THREE.BoxGeometry(2.2, 0.8, 4.5);
-        const bodyMat = new THREE.MeshPhysicalMaterial({ 
-            color: 0xff0033, 
-            metalness: 0.9, 
-            roughness: 0.1, 
-            clearcoat: 1.0, 
-            clearcoatRoughness: 0.1 
-        });
-        const carBody = new THREE.Mesh(bodyGeo, bodyMat);
-        carBody.position.y = 0.6;
-        carBody.castShadow = true;
-        carGroup.add(carBody);
+            // جسم السيارة
+            const bodyGeo = new THREE.BoxGeometry(1.8, 0.7, 3.8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.8, roughness: 0.2 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.5;
+            body.castShadow = true;
+            group.add(body);
 
-        // سقف السيارة وكابينة القيادة
-        const cabinGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
-        const cabinMat = new THREE.MeshPhysicalMaterial({ color: 0x111111, roughness: 0.2, transmission: 0.3 });
-        const carCabin = new THREE.Mesh(cabinGeo, cabinMat);
-        carCabin.position.set(0, 1.2, -0.2);
-        carCabin.castShadow = true;
-        carGroup.add(carCabin);
+            // الكابينة
+            const cabinGeo = new THREE.BoxGeometry(1.4, 0.5, 1.8);
+            const cabinMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1 });
+            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+            cabin.position.set(0, 1.0, -0.2);
+            group.add(cabin);
 
-        // العجلات
-        const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 32);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+            // أضواء السيارة
+            if(isPlayer) {
+                const lightGeo = new THREE.BoxGeometry(0.3, 0.2, 0.1);
+                const lightMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                const hl1 = new THREE.Mesh(lightGeo, lightMat); hl1.position.set(-0.6, 0.5, 1.9);
+                const hl2 = new THREE.Mesh(lightGeo, lightMat); hl2.position.set(0.6, 0.5, 1.9);
+                group.add(hl1, hl2);
+            }
+
+            return group;
+        }
+
+        // سيارة اللاعب
+        const playerCar = createCar(0x00ffff, true);
+        playerCar.position.set(0, 0, 0);
+        scene.add(playerCar);
+
+        // --- 5. إضافة سيارات NPC غير قابلة للاختراق ---
+        const npcCars = [];
+        const npcColors = [0xff2222, 0x22ff22, 0xffff22, 0xff22ff];
         
-        const wheelPositions = [
-            [-1.2, 0.4, 1.5], [1.2, 0.4, 1.5],
-            [-1.2, 0.4, -1.5], [1.2, 0.4, -1.5]
-        ];
-
-        const wheels = [];
-        wheelPositions.forEach(pos => {
-            const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-            wheel.rotation.z = Math.PI / 2;
-            wheel.position.set(...pos);
-            wheel.castShadow = true;
-            carGroup.add(wheel);
-            wheels.push(wheel);
-        });
-
-        scene.add(carGroup);
-
-        // متغيرات الحركة والتحكم
-        const keys = {};
-        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-
-        let speed = 0;
-        let maxSpeed = 0.8;
-        let acceleration = 0.015;
-        let deceleration = 0.01;
-        let steeringAngle = 0;
-
-        // حلقة اللعبة الرئيسية (Game Loop)
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // نظام القيادة والتسارع
-            if (keys['w'] || keys['arrowup']) {
-                if (speed < maxSpeed) speed += acceleration;
-            } else if (keys['s'] || keys['arrowdown']) {
-                if (speed > -maxSpeed / 2) speed -= acceleration;
-            } else {
-                if (speed > 0) speed -= deceleration;
-                if (speed < 0) speed += deceleration;
-                if (Math.abs(speed) < 0.005) speed = 0;
-            }
-
-            // نظام التوجيه والانعطاف
-            if (keys['a'] || keys['arrowleft']) {
-                if (Math.abs(speed) > 0.01) steeringAngle += 0.025 * (speed / maxSpeed);
-            }
-            if (keys['d'] || keys['arrowright']) {
-                if (Math.abs(speed) > 0.01) steeringAngle -= 0.025 * (speed / maxSpeed);
-            }
-
-            // تحديث موقع السيارة واتجاهها
-            carGroup.rotation.y += steeringAngle * (speed * 0.8);
-            carGroup.translateZ(speed);
-            steeringAngle *= 0.9; // عودة العجلات للوضع الطبيعي تدريجياً
-
-            // تحديث إضاءة السيارة المرافقة
-            pointLight.position.copy(carGroup.position);
-            pointLight.position.y += 2;
-
-            // تتبع الكاميرا السينمائي السلس للسيارة
-            const idealOffset = new THREE.Vector3(0, 4, -9);
-            idealOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), carGroup.rotation.y);
-            idealOffset.add(carGroup.position);
-            camera.position.lerp(idealOffset, 0.1);
-
-            const lookAtTarget = carGroup.position.clone();
-            lookAtTarget.y += 1;
-            camera.lookAt(lookAtTarget);
-
-            renderer.render(scene, camera);
+        for (let i = 0; i < 6; i++) {
+            const npc = createCar(npcColors[i % npcColors.length]);
+            // توزيعهم في المسارات
+            const lane = (i % 2 === 0) ? -4 : 4;
+            npc.position.set(lane, 0, (i * 40) - 100);
+            npc.speed = 0.1 + Math.random() * 0.1;
+            scene.add(npc);
+            npcCars.push(npc);
         }
 
-        animate();
+        // --- 6. نظام مدخلات التحكم (لوحة + لمس للهاتف) ---
+        const keys = { w: false, s: false, a: false, d: false };
 
-        // التكيف مع حجم الشاشة
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        // أحداث اللمس
+        const bindTouch = (id, key) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+        bindTouch('btnGas', 'w');
+        bindTouch('btnBrake', 's');
+        bindTouch('btnLeft', 'a');
+        bindTouch('btnRight', 'd');
+
+        // أحداث اللوحة
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.w = true;
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.s = true;
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.a = true;
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.d = true;
         });
-    </script>
-</body>
-</html>
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.w = false;
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys
